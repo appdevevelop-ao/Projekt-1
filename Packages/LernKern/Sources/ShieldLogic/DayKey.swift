@@ -25,3 +25,29 @@ public struct DayKey: Hashable, Codable, Comparable, Sendable, CustomStringConve
         (lhs.year, lhs.month, lhs.day) < (rhs.year, rhs.month, rhs.day)
     }
 }
+
+extension DayKey {
+    /// Beginn dieses Tages (00:00 Ortszeit) im angegebenen Kalender.
+    public func startDate(calendar: Calendar) -> Date? {
+        calendar.date(from: DateComponents(year: year, month: month, day: day))
+    }
+
+    /// Beginn des Folgetages, also das Ende dieses Tages.
+    public func endDate(calendar: Calendar) -> Date? {
+        guard let start = startDate(calendar: calendar) else { return nil }
+        return calendar.date(byAdding: .day, value: 1, to: start)
+    }
+
+    public func adding(days: Int, calendar: Calendar) -> DayKey {
+        guard let start = startDate(calendar: calendar),
+              let shifted = calendar.date(byAdding: .day, value: days, to: start) else { return self }
+        return DayKey(shifted, calendar: calendar)
+    }
+
+    /// Parst "JJJJ-MM-TT".
+    public init?(string: String) {
+        let parts = string.split(separator: "-").compactMap { Int($0) }
+        guard parts.count == 3 else { return nil }
+        self.init(year: parts[0], month: parts[1], day: parts[2])
+    }
+}
