@@ -12,6 +12,10 @@ on:
       - "project.yml"
       - ".github/workflows/screenshots.yml"
 
+# Schreibrecht nur, um die Bildschirmfotos nach docs/screenshots zu übernehmen.
+permissions:
+  contents: write
+
 concurrency:
   group: screenshots-${{ github.ref }}
   cancel-in-progress: true
@@ -111,3 +115,17 @@ jobs:
           name: bildschirmfotos
           path: screenshots/
           retention-days: 14
+      - name: Bildschirmfotos ins Repository übernehmen
+        run: |
+          mkdir -p docs/screenshots
+          cp screenshots/*.png docs/screenshots/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/screenshots
+          if git diff --cached --quiet; then echo "Keine Änderungen"; exit 0; fi
+          git commit -m "Bildschirmfotos aus dem iOS-Simulator aktualisieren [skip ci]" \
+            -m "Automatisch erzeugt vom Workflow Bildschirmfotos (Debug-Build mit Beispieldaten)."
+          for i in 1 2 3; do
+            git pull --rebase origin "$GITHUB_REF_NAME" && git push origin "HEAD:$GITHUB_REF_NAME" && break
+            sleep 5
+          done
