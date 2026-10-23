@@ -1,0 +1,192 @@
+# XcodeGen-Projektdefinition. Erzeuge das Xcode-Projekt mit:
+#   brew install xcodegen && xcodegen generate
+# Signierung/Bundle-IDs: siehe Config/Base.xcconfig und README.md.
+name: LernFokus
+options:
+  deploymentTarget:
+    iOS: "17.0"
+  developmentLanguage: de
+  createIntermediateGroups: true
+  groupSortPosition: top
+configFiles:
+  Debug: Config/Base.xcconfig
+  Release: Config/Base.xcconfig
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    TARGETED_DEVICE_FAMILY: "1,2"
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    DEAD_CODE_STRIPPING: YES
+packages:
+  LernKern:
+    path: Packages/LernKern
+targets:
+  LernFokus:
+    type: application
+    platform: iOS
+    sources:
+      - path: App/Sources
+      - path: App/Resources
+      - path: Shared
+    dependencies:
+      - package: LernKern
+        product: LernKern
+      - package: LernKern
+        product: ShieldLogic
+      - target: ActivityMonitorExtension
+      - target: ShieldConfigurationExtension
+      - target: ShieldActionExtension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_ID_PREFIX)
+        PRODUCT_NAME: LernFokus
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: LernFokus
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleDevelopmentRegion: de
+        LSRequiresIPhoneOS: true
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        NSCalendarsFullAccessUsageDescription: "LernFokus trägt deine Lerneinheiten in den von dir gewählten Kalender ein und erkennt, wenn du einen Lerntermin dort verschiebst. Andere Termine werden nicht verändert."
+        NSCalendarsUsageDescription: "LernFokus trägt deine Lerneinheiten in den von dir gewählten Kalender ein."
+        NSCameraUsageDescription: "Mit der Kamera kannst du Mitschriften und Unterlagen scannen. Die Texterkennung läuft auf deinem Gerät."
+        AppGroupIdentifier: $(APP_GROUP_ID)
+        LFDefaultBackendURL: ""
+        BGTaskSchedulerPermittedIdentifiers:
+          - $(BUNDLE_ID_PREFIX).refresh
+        UIBackgroundModes:
+          - fetch
+        ITSAppUsesNonExemptEncryption: false
+    entitlements:
+      path: App/LernFokus.entitlements
+      properties:
+        com.apple.developer.family-controls: true
+        com.apple.security.application-groups:
+          - $(APP_GROUP_ID)
+    scheme:
+      testTargets:
+        - LernFokusTests
+
+  LernFokusTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: App/Tests
+    dependencies:
+      - target: LernFokus
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_ID_PREFIX).tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/LernFokus.app/LernFokus
+        BUNDLE_LOADER: $(TEST_HOST)
+
+  ActivityMonitorExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Extensions/ActivityMonitor
+      - path: Shared
+    dependencies:
+      - package: LernKern
+        product: ShieldLogic
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_ID_PREFIX).monitor
+        PRODUCT_NAME: ActivityMonitorExtension
+        SKIP_INSTALL: YES
+        APPLICATION_EXTENSION_API_ONLY: YES
+    info:
+      path: Extensions/ActivityMonitor/Info.plist
+      properties:
+        CFBundleDisplayName: LernFokus Monitor
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        AppGroupIdentifier: $(APP_GROUP_ID)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.deviceactivity.monitor-extension
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ActivityMonitorExtension
+    entitlements:
+      path: Extensions/ActivityMonitor/ActivityMonitor.entitlements
+      properties:
+        com.apple.developer.family-controls: true
+        com.apple.security.application-groups:
+          - $(APP_GROUP_ID)
+
+  ShieldConfigurationExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Extensions/ShieldConfiguration
+      - path: Shared
+    dependencies:
+      - package: LernKern
+        product: ShieldLogic
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_ID_PREFIX).shieldconfig
+        PRODUCT_NAME: ShieldConfigurationExtension
+        SKIP_INSTALL: YES
+        APPLICATION_EXTENSION_API_ONLY: YES
+    info:
+      path: Extensions/ShieldConfiguration/Info.plist
+      properties:
+        CFBundleDisplayName: LernFokus Sperrbildschirm
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        AppGroupIdentifier: $(APP_GROUP_ID)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.ManagedSettingsUI.shield-configuration-service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShieldConfigurationExtension
+    entitlements:
+      path: Extensions/ShieldConfiguration/ShieldConfiguration.entitlements
+      properties:
+        com.apple.developer.family-controls: true
+        com.apple.security.application-groups:
+          - $(APP_GROUP_ID)
+
+  ShieldActionExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Extensions/ShieldAction
+      - path: Shared
+    dependencies:
+      - package: LernKern
+        product: ShieldLogic
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_ID_PREFIX).shieldaction
+        PRODUCT_NAME: ShieldActionExtension
+        SKIP_INSTALL: YES
+        APPLICATION_EXTENSION_API_ONLY: YES
+    info:
+      path: Extensions/ShieldAction/Info.plist
+      properties:
+        CFBundleDisplayName: LernFokus Sperraktion
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        AppGroupIdentifier: $(APP_GROUP_ID)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.ManagedSettings.shield-action-service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShieldActionExtension
+    entitlements:
+      path: Extensions/ShieldAction/ShieldAction.entitlements
+      properties:
+        com.apple.developer.family-controls: true
+        com.apple.security.application-groups:
+          - $(APP_GROUP_ID)

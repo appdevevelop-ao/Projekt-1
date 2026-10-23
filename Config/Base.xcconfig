@@ -1,0 +1,17 @@
+// Gemeinsame Build-Einstellungen für App und Erweiterungen.
+//
+// Für eigene Werte (Team-ID, Bundle-ID) NICHT diese Datei ändern, sondern
+// Config/Local.xcconfig anlegen (wird von git ignoriert), z. B.:
+//
+//   DEVELOPMENT_TEAM = ABCDE12345
+//   BUNDLE_ID_PREFIX = de.deinname.lernfokus
+//
+// App-Group und Bundle-IDs der Erweiterungen werden daraus abgeleitet.
+
+BUNDLE_ID_PREFIX = com.example.lernfokus
+DEVELOPMENT_TEAM =
+APP_GROUP_ID = group.$(BUNDLE_ID_PREFIX)
+MARKETING_VERSION = 0.1.0
+CURRENT_PROJECT_VERSION = 1
+
+#include? "Local.xcconfig"

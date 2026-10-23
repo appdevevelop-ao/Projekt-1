@@ -1,0 +1,25 @@
+# Xcode
+*.xcodeproj/
+!*.xcodeproj/project.xcworkspace/
+xcuserdata/
+DerivedData/
+build/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Packages/*/.build/
+Package.resolved
+
+# Local overrides (signing, team, backend URL)
+Config/Local.xcconfig
+
+# Node backend
+Backend/node_modules/
+Backend/.env
+
+# OS
+.DS_Store
