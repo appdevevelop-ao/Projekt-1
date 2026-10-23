@@ -146,6 +146,6 @@ public enum SimulationBuilder {
         // Reihenfolge: gemischt, nicht nach Thema sortiert
         chosen.shuffle(using: &rng)
         return SimulationBlueprint(examID: exam.id, questionIDs: chosen.map(\.id), timeLimitMinutes: timeLimitMinutes,
-                                   pointsPossible: chosen.reduce(0) { $0 + $1.points }, limitation: limitation)
+                                   pointsPossible: chosen.sum { $0.points }, limitation: limitation)
     }
 }

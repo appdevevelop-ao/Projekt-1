@@ -205,10 +205,10 @@ public struct GradePredictor: Sendable {
         let byTopic = Dictionary(grouping: objectives, by: \.topicID)
         let topicForecasts: [TopicForecast] = topics.compactMap { t in
             guard let objs = byTopic[t.id], !objs.isEmpty else { return nil }
-            let w = objs.reduce(0) { $0 + (weights[$1.id] ?? 0) }
+            let w = objs.sum { o in weights.value(o.id) }
             guard w > 0 else { return nil }
-            let expectedFraction = objs.reduce(0) { $0 + (weights[$1.id] ?? 0) * (pByObjective[$1.id] ?? 0) } / w
-            let lost = objs.reduce(0) { $0 + (weights[$1.id] ?? 0) * (1 - (pByObjective[$1.id] ?? 0)) }
+            let expectedFraction = objs.sum { o in weights.value(o.id) * pByObjective.value(o.id) } / w
+            let lost = objs.sum { o in weights.value(o.id) * (1 - pByObjective.value(o.id)) }
             let evidence = objs.contains { (knowledge[$0.id]?.attemptCount ?? 0) > 0 }
             return TopicForecast(topicID: t.id, title: t.title, expectedFraction: expectedFraction, lostShare: lost, weight: w, hasEvidence: evidence)
         }
@@ -250,6 +250,6 @@ public struct GradePredictor: Sendable {
 
     /// Erwartete Punktzahl, wenn bestimmte Lernziele eine Ziel-Lösungswahrscheinlichkeit erreichen.
     static func projectedScore(objectives: [LearningObjective], weights: [UUID: Double], probability: [UUID: Double]) -> Double {
-        objectives.reduce(0) { $0 + (weights[$1.id] ?? 0) * (probability[$1.id] ?? 0) }
+        objectives.sum { o in weights.value(o.id) * probability.value(o.id) }
     }
 }

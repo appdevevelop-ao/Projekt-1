@@ -29,7 +29,8 @@ jobs:
           node-version: 22
       - name: Tests
         run: |
-          if [ -f Backend/package.json ]; then npm test --prefix Backend; else echo "kein Backend"; fi
+          npm ci --prefix Backend
+          npm test --prefix Backend
 
   ios:
     name: iOS-App (Build + Tests im Simulator)

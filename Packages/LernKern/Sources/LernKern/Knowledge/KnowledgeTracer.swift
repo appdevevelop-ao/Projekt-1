@@ -238,7 +238,7 @@ public struct KnowledgeTracer: Sendable {
         }
 
         let pMedium = MathUtil.sigmoid(theta)
-        let pMix = Self.examDifficultyMix.reduce(0) { $0 + $1.1 * MathUtil.sigmoid(theta - $1.0.logit) }
+        let pMix = Self.examDifficultyMix.sum { entry in entry.1 * MathUtil.sigmoid(theta - entry.0.logit) }
         let elapsedNow = lastReview.map { max(0, now.timeIntervalSince($0)) / 86_400 } ?? 0
         let retention = stability > 0 ? Self.retrievability(stability: stability, elapsedDays: elapsedNow) : 0
         let due = (stability > 0 ? lastReview?.addingTimeInterval(stability * 86_400) : nil)
@@ -324,8 +324,8 @@ public struct KnowledgeTracer: Sendable {
     static func score(criteria: [MasteryCriterion], provisionalMet: Bool) -> Double {
         let provisionalWeights: [MasteryCriterionID: Double] = [.correctAnswers: 0.3, .distinctQuestions: 0.2, .ability: 0.3, .consistency: 0.2]
         let stableWeights: [MasteryCriterionID: Double] = [.spacedRecall: 0.4, .hardOrTransfer: 0.3, .retention: 0.3]
-        let prov = criteria.reduce(0) { $0 + (provisionalWeights[$1.id] ?? 0) * $1.progress }
-        let stab = criteria.reduce(0) { $0 + (stableWeights[$1.id] ?? 0) * $1.progress }
+        let prov = criteria.sum { c in provisionalWeights.value(c.id) * c.progress }
+        let stab = criteria.sum { c in stableWeights.value(c.id) * c.progress }
         var score = 0.6 * prov + 0.4 * stab
         if !provisionalMet { score = min(score, 0.59) }
         if !criteria.allSatisfy(\.isMet) { score = min(score, 0.99) }

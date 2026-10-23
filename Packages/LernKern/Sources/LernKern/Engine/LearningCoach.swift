@@ -117,7 +117,7 @@ public struct LearningCoach: Sendable {
             schedule: scheduleStatus(state: state, now: now),
             recommendation: recommendation(state: state, exams: exams, knowledge: knowledge, next: next, now: now),
             todayPlannedMinutes: todayTasks.filter { $0.status != .skipped }.reduce(0) { $0 + $1.durationMinutes },
-            todayCompletedMinutes: todayTasks.filter { $0.status == .completed }.reduce(0) { $0 + Int(($1.actualMinutes ?? Double($1.durationMinutes)).rounded()) }
+            todayCompletedMinutes: Int(todayTasks.filter { $0.status == .completed }.sum { t in t.actualMinutes ?? Double(t.durationMinutes) }.rounded())
         )
     }
 
@@ -142,8 +142,14 @@ public struct LearningCoach: Sendable {
                                       reason: "Laut Vergessenskurve ist jetzt eine Wiederholung fällig – so bleibt das Wissen präsent.",
                                       taskID: nil, examID: snapshot.exam.id, objectiveIDs: Array(due.prefix(5).map(\.id)), kind: .review)
             }
-            let open = objectives.filter { (knowledge[$0.id]?.level ?? .notStarted) < .provisional }
-                .sorted { (snapshot.progress.weights[$0.id] ?? 0) * (1 - (knowledge[$0.id]?.score ?? 0)) > (snapshot.progress.weights[$1.id] ?? 0) * (1 - (knowledge[$1.id]?.score ?? 0)) }
+            func missingPoints(_ o: LearningObjective) -> Double {
+                let weight: Double = snapshot.progress.weights[o.id] ?? 0
+                let score: Double = knowledge[o.id]?.score ?? 0
+                return weight * (1 - score)
+            }
+            let open = objectives
+                .filter { o in (knowledge[o.id]?.level ?? MasteryLevel.notStarted) < MasteryLevel.provisional }
+                .sorted { a, b in missingPoints(a) > missingPoints(b) }
             if let first = open.first {
                 let started = (knowledge[first.id]?.level ?? .notStarted) > .notStarted
                 return Recommendation(title: (started ? "Üben: " : "Verstehen: ") + first.title,

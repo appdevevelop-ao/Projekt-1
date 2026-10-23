@@ -138,12 +138,15 @@ public enum TermExtractor {
             if original[token] == nil || raw.first?.isUppercase == true { original[token] = raw }
         }
         let n = Double(max(corpus.count, 1))
-        return termFrequency.map { token, tf -> (String, Double) in
-            let idf = log((n + 1) / Double((docFrequency[token] ?? 0) + 1)) + 1
-            return (token, Double(tf) * idf * (original[token]?.first?.isUppercase == true ? 1.2 : 1))
+        var scored: [(token: String, score: Double)] = []
+        for (token, tf) in termFrequency {
+            let df = Double(docFrequency[token] ?? 0)
+            let idf: Double = log((n + 1) / (df + 1)) + 1
+            let capitalized = original[token]?.first?.isUppercase == true
+            let boost: Double = capitalized ? 1.2 : 1
+            scored.append((token, Double(tf) * idf * boost))
         }
-        .sorted { $0.1 != $1.1 ? $0.1 > $1.1 : $0.0 < $1.0 }
-        .prefix(limit)
-        .compactMap { original[$0.0] }
+        scored.sort { a, b in a.score != b.score ? a.score > b.score : a.token < b.token }
+        return scored.prefix(limit).compactMap { original[$0.token] }
     }
 }

@@ -94,7 +94,7 @@ public struct ProgressCalculator: Sendable {
         for o in objectives {
             let k = knowledge[o.id]
             levelCounts[k?.level ?? .notStarted, default: 0] += 1
-            fraction += (weights[o.id] ?? 0) * (k?.score ?? 0)
+            fraction += weights.value(o.id) * (k?.score ?? 0)
             if k?.isComplete == true { completeCount += 1 }
         }
         let isComplete = !objectives.isEmpty && completeCount == objectives.count
@@ -102,8 +102,8 @@ public struct ProgressCalculator: Sendable {
         let byTopic = Dictionary(grouping: objectives, by: \.topicID)
         let topicProgress: [TopicProgress] = topics.compactMap { t in
             guard let objs = byTopic[t.id], !objs.isEmpty else { return nil }
-            let w = objs.reduce(0) { $0 + (weights[$1.id] ?? 0) }
-            let f = w > 0 ? objs.reduce(0) { $0 + (weights[$1.id] ?? 0) * (knowledge[$1.id]?.score ?? 0) } / w : 0
+            let w = objs.sum { o in weights.value(o.id) }
+            let f = w > 0 ? objs.sum { o in weights.value(o.id) * (knowledge[o.id]?.score ?? 0) } / w : 0
             var counts: [MasteryLevel: Int] = [:]
             for o in objs { counts[knowledge[o.id]?.level ?? .notStarted, default: 0] += 1 }
             return TopicProgress(

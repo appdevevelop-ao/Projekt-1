@@ -13,17 +13,17 @@ public enum ObjectiveWeights {
         // Thema-Gewichte
         var topicWeight: [UUID: Double] = [:]
         let explicit = usedTopics.compactMap { t in t.examWeight.map { (t.id, max(0, $0)) } }
-        let explicitSum = explicit.reduce(0) { $0 + $1.1 }
+        let explicitSum = explicit.sum { $0.1 }
         let implicitTopics = usedTopics.filter { $0.examWeight == nil }
         func naturalWeight(_ t: Topic) -> Double {
-            (byTopic[t.id] ?? []).reduce(0) { $0 + $1.importance.weight } * t.importance.weight
+            (byTopic[t.id] ?? []).sum { $0.importance.weight } * t.importance.weight
         }
         if explicit.isEmpty {
             for t in usedTopics { topicWeight[t.id] = naturalWeight(t) }
         } else {
             let remaining = max(0, 1 - explicitSum)
             for (id, w) in explicit { topicWeight[id] = w }
-            let naturalSum = implicitTopics.reduce(0) { $0 + naturalWeight($1) }
+            let naturalSum = implicitTopics.sum { naturalWeight($0) }
             for t in implicitTopics {
                 topicWeight[t.id] = naturalSum > 0 ? remaining * naturalWeight(t) / naturalSum : 0
             }
@@ -37,9 +37,10 @@ public enum ObjectiveWeights {
         var result: [UUID: Double] = [:]
         for t in usedTopics {
             let objs = byTopic[t.id] ?? []
-            let inner = objs.reduce(0) { $0 + $1.importance.weight }
+            let inner = objs.sum { $0.importance.weight }
             for o in objs {
-                result[o.id] = (topicWeight[t.id] ?? 0) * (inner > 0 ? o.importance.weight / inner : 0)
+                let share: Double = inner > 0 ? o.importance.weight / inner : 0
+                result[o.id] = topicWeight.value(t.id) * share
             }
         }
         let total = result.values.reduce(0, +)

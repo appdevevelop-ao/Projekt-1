@@ -40,7 +40,7 @@ public enum DailyGoalPlanner {
     public static func status(record: DailyGoalRecord, checks: [CompletedCheck], simulations: [ExamSimulationResult], calendar: Calendar) -> DailyGoalStatus {
         let todayChecks = checks.filter { DayKey($0.completedAt, calendar: calendar) == record.day }
         let todaySims = simulations.filter { DayKey($0.finishedAt, calendar: calendar) == record.day && $0.answeredShare >= 0.8 }
-        let credits = todayChecks.reduce(0) { $0 + $1.dailyGoalCredit } + Double(todaySims.count) * 2
+        let credits = todayChecks.sum { $0.dailyGoalCredit } + Double(todaySims.count) * 2
         let required = Double(record.requiredChecks)
         let reached = required == 0 || credits >= required
         let progress = required == 0 ? 1 : min(1, credits / required)

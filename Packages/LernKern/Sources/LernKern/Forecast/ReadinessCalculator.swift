@@ -31,9 +31,9 @@ public enum ReadinessCalculator {
     ) -> ExamReadiness {
         let target = max(0.3, exam.targetBand.minFraction)
         let practiced = objectives.filter { (knowledge[$0.id]?.stabilityDays ?? 0) > 0 }
-        let practicedWeight = practiced.reduce(0) { $0 + (weights[$1.id] ?? 0) }
+        let practicedWeight = practiced.sum { o in weights.value(o.id) }
         let retention: Double? = practicedWeight > 0
-            ? practiced.reduce(0) { $0 + (weights[$1.id] ?? 0) * (knowledge[$1.id]?.retrievability ?? 0) } / practicedWeight
+            ? practiced.sum { o in weights.value(o.id) * (knowledge[o.id]?.retrievability ?? 0) } / practicedWeight
             : nil
         let consistencyBase = objectives.filter { (knowledge[$0.id]?.attemptCount ?? 0) >= 3 }
         let consistency: Double? = consistencyBase.isEmpty ? nil
@@ -56,11 +56,11 @@ public enum ReadinessCalculator {
                                explanation: "Anteil der Lernziele, bei denen deine letzten Antworten beständig richtig waren."),
         ]
         let available = components.filter { $0.value != nil }
-        let weightSum = available.reduce(0) { $0 + $1.weight }
+        let weightSum = available.sum { $0.weight }
         guard weightSum >= 0.45 else {
             return ExamReadiness(score: nil, components: components, headline: "Noch zu wenige Daten für einen Prüfungstauglichkeits-Score.", isLimited: true)
         }
-        var score = available.reduce(0) { $0 + $1.weight * ($1.value ?? 0) } / weightSum * 100
+        var score = available.sum { c in c.weight * (c.value ?? 0) } / weightSum * 100
         let limited = latestSim == nil
         if limited { score = min(score, 85) }
         let rounded = Int(score.rounded())

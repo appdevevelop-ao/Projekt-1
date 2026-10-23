@@ -100,7 +100,7 @@ public struct TimeEstimator: Sendable {
 
     // Lösungswahrscheinlichkeit bei Prüfungsmischung für ausgewählte Fähigkeitswerte.
     static func examMix(theta: Double) -> Double {
-        KnowledgeTracer.examDifficultyMix.reduce(0) { $0 + $1.1 * MathUtil.sigmoid(theta - $1.0.logit) }
+        KnowledgeTracer.examDifficultyMix.sum { entry in entry.1 * MathUtil.sigmoid(theta - entry.0.logit) }
     }
 
     public func estimate(
@@ -137,7 +137,7 @@ public struct TimeEstimator: Sendable {
             MinuteRange(low: Int((minutes * spread.0).rounded()), high: Int((minutes * spread.1).rounded()))
         }
 
-        let modelScore = objectives.reduce(0) { $0 + (weights[$1.id] ?? 0) * (plans[$1.id]?.p0 ?? 0) }
+        let modelScore = objectives.sum { o in weights.value(o.id) * (plans[o.id]?.p0 ?? 0) }
         let offset = (forecast?.expectedScore).map { $0 - modelScore } ?? 0
         let margin = exam.gradeScale.isOfficial ? 0.03 : 0.05
         let targetFraction = min(0.98, exam.targetBand.minFraction + margin)
@@ -267,7 +267,7 @@ public struct TimeEstimator: Sendable {
                 var i = idx
                 while i < plan.levels.count {
                     let level = plan.levels[i]
-                    let gain = (weights[o.id] ?? 0) * (level.p - (currentP[o.id] ?? 0))
+                    let gain: Double = weights.value(o.id) * (level.p - currentP.value(o.id))
                     if gain > 1e-6 {
                         let cost = max(0.5, level.cost - (currentCost[o.id] ?? 0))
                         let ratio = gain / cost
@@ -302,8 +302,8 @@ public struct TimeEstimator: Sendable {
     func speedFactor(_ tasks: [StudyTask]) -> Double {
         let done = tasks.filter { $0.status == .completed && ($0.actualMinutes ?? 0) > 0 && $0.kind == .learn }
         guard done.count >= 3 else { return 1 }
-        let planned = done.reduce(0) { $0 + Double($1.durationMinutes) }
-        let actual = done.reduce(0) { $0 + ($1.actualMinutes ?? 0) }
+        let planned = done.sum { Double($0.durationMinutes) }
+        let actual = done.sum { $0.actualMinutes ?? 0 }
         guard planned > 0 else { return 1 }
         return MathUtil.clamp(actual / planned, 0.6, 1.8)
     }
@@ -318,7 +318,7 @@ public struct TimeEstimator: Sendable {
             var minutes = Double(preferences.minutes(on: day, calendar: calendar))
             if offset == 0 {
                 let doneToday = completedTasks.filter { $0.status == .completed && calendar.isDate($0.completedAt ?? $0.start, inSameDayAs: now) }
-                    .reduce(0) { $0 + ($1.actualMinutes ?? Double($1.durationMinutes)) }
+                    .sum { t in t.actualMinutes ?? Double(t.durationMinutes) }
                 minutes = max(0, minutes - doneToday)
                 let latest = Double(preferences.latestEndMinute)
                 let nowMinute = Double(calendar.component(.hour, from: now) * 60 + calendar.component(.minute, from: now))
