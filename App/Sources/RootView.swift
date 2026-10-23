@@ -45,6 +45,12 @@ struct RootView: View {
             }
         }
         .animation(.easeInOut(duration: 0.25), value: model.banner)
+        .task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(15))
+                model.tick()
+            }
+        }
         .fullScreenCover(isPresented: Binding(
             get: { model.session != nil && model.state.settings.onboardingCompleted },
             set: { if !$0 { model.closeSession() } }

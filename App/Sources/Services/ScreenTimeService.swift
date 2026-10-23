@@ -126,6 +126,17 @@ final class ScreenTimeService {
         systemShieldActive = ShieldController.isShieldActiveInSystem
     }
 
+    /// Für „Alle Daten löschen“: Sperre aufheben, Zeitpläne beenden, Auswahl, Regeln und Freigaben entfernen.
+    func resetAll() {
+        MonitoringScheduler.stopAll()
+        monitoringProblems = []
+        selection = FamilyActivitySelection()
+        SharedShieldStore.saveSelection(selection)
+        SharedShieldStore.saveState(SharedShieldState())
+        SharedShieldStore.shieldDisplay = ShieldDisplayInfo()
+        reconcile()
+    }
+
     /// Stellt die Zeitpläne nach einem Neustart oder Update sicher.
     func ensureMonitoring() {
         guard shared.policy.isEnabled else { return }

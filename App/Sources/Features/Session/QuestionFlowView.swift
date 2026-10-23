@@ -53,6 +53,8 @@ struct QuestionFlowView: View {
             // Nach einem Neustart während der Rückmeldung: Antwort ist gespeichert, weiter zur nächsten Frage.
             if session.currentAnswered == true { model.advanceQuestion() }
             resetInputs()
+            // Zeit einer Simulation bereits abgelaufen (z. B. nach einem Neustart): direkt auswerten.
+            if let remaining = session.remainingSeconds(at: Date()), remaining <= 0 { onFinish() }
         }
         .sensoryFeedback(trigger: evaluation?.verdict) { _, new in
             switch new {

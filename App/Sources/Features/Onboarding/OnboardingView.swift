@@ -307,7 +307,12 @@ struct OnboardingPlanStep: View {
                 Button("Los geht's") {
                     model.updateSettings { $0.onboardingCompleted = true }
                     model.replan(trigger: .initial, announce: false)
-                    Task { _ = await model.notifications.requestAuthorization() }
+                    Task {
+                        // Erst nach der Zustimmung lassen sich Erinnerungen planen.
+                        if await model.notifications.requestAuthorization() {
+                            await model.notifications.reschedule(state: model.state, level: model.state.settings.notificationLevel)
+                        }
+                    }
                 }
                 .buttonStyle(PrimaryButtonStyle())
             }

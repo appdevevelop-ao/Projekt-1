@@ -70,7 +70,9 @@ struct ExamRow: View {
 struct ExamMaterialView: View {
     @Environment(AppModel.self) private var model
     let examID: UUID
-    @State private var importingRole: DocumentRole?
+    @State private var showImporter = false
+    /// Getrennt vom Dialogzustand gespeichert: Das Schließen des Dialogs darf die gewählte Rolle nicht zurücksetzen.
+    @State private var importRole: DocumentRole = .material
     @State private var scanning = false
     @State private var addingTopic = false
     @State private var editingExam = false
@@ -86,10 +88,9 @@ struct ExamMaterialView: View {
                 }
             }
             .navigationTitle(exam.title)
-            .fileImporter(isPresented: Binding(get: { importingRole != nil }, set: { if !$0 { importingRole = nil } }),
+            .fileImporter(isPresented: $showImporter,
                           allowedContentTypes: SupportedTypes.all, allowsMultipleSelection: true) { result in
-                let role = importingRole ?? .material
-                importingRole = nil
+                let role = importRole
                 if case .success(let urls) = result {
                     Task {
                         for url in urls { await model.importFile(at: url, examID: exam.id, role: role) }
@@ -118,11 +119,11 @@ struct ExamMaterialView: View {
                 NavigationLink { DocumentDetailView(documentID: document.id) } label: { DocumentRow(document: document) }
             }
             Menu {
-                Button("Datei auswählen", systemImage: "doc") { importingRole = .material }
+                Button("Datei auswählen", systemImage: "doc") { importRole = .material; showImporter = true }
                 if DocumentScannerView.isSupported {
                     Button("Seiten scannen", systemImage: "doc.viewfinder") { scanning = true }
                 }
-                Button("Lehrplan oder Themenliste", systemImage: "list.bullet.clipboard") { importingRole = .syllabus }
+                Button("Lehrplan oder Themenliste", systemImage: "list.bullet.clipboard") { importRole = .syllabus; showImporter = true }
                 Button("Thema selbst anlegen", systemImage: "square.and.pencil") { addingTopic = true }
             } label: {
                 Label("Unterlagen hinzufügen", systemImage: "plus.circle.fill")

@@ -200,4 +200,15 @@ public enum FullMasteryEvaluator {
         }
         return FullMasteryStatus(isComplete: complete, entries: entries, explanation: explanation)
     }
+
+    /// Die Tagesfreigabe gilt für den lokalen Kalendertag, an dem 100 % durch eine bestandene Überprüfung oder eine
+    /// Prüfungssimulation bestätigt wurden. Am Folgetag gilt wieder die normale Logik – auch wenn der Stand noch 100 %
+    /// beträgt, braucht es dann erst wieder eine bestandene Überprüfung an diesem Tag.
+    public static func unlockEarnedToday(_ status: FullMasteryStatus, state: AppState, now: Date, calendar: Calendar) -> Bool {
+        guard status.isComplete else { return false }
+        let today = DayKey(now, calendar: calendar)
+        let passedCheckToday = state.checks.contains { $0.passed && $0.completedAt <= now && DayKey($0.completedAt, calendar: calendar) == today }
+        let simulationToday = state.simulations.contains { $0.finishedAt <= now && DayKey($0.finishedAt, calendar: calendar) == today }
+        return passedCheckToday || simulationToday
+    }
 }

@@ -136,14 +136,14 @@ die Xcode beim Hinzufügen der Capability automatisch verwendet.
 3. App starten, Onboarding durchlaufen, bei „Bildschirmzeit“ die Berechtigung erteilen und z. B. die Kategorie *Unterhaltung* auswählen.
 4. **Sperre testen**: Profil → App-Sperre → Modus *Tagesziel*, „Sperre ab“ auf eine vergangene Uhrzeit setzen → die gewählte App zeigt den LernFokus-Sperrbildschirm.
 5. **Belohnung testen**: eine Lerneinheit abschließen (≥ 3 Fragen bestehen) → unter *Heute* Minuten einlösen → App ist frei; nach Ablauf (oder „Vorzeitig beenden“) wieder gesperrt.
-6. **100 %-Freigabe testen**: Mit einem kleinen Test-Dokument (z. B. 2–3 Definitionen) alle Lernziele bis „stabil“ bringen – das erfordert eine Wiederholung am Folgetag. Danach zeigt *Heute* „100 % erreicht“, die Sperre ist bis Mitternacht aufgehoben und kehrt am nächsten Tag zurück.
+6. **100 %-Freigabe testen**: Mit einem kleinen Test-Dokument (z. B. 2–3 Definitionen) alle Lernziele bis „stabil“ bringen – das erfordert eine Wiederholung am Folgetag. Sobald eine bestandene Überprüfung 100 % bestätigt, zeigt *Heute* „100 % erreicht“, die Sperre ist bis Mitternacht aufgehoben und am nächsten Tag gilt wieder die normale Logik.
 7. **Neustart testen**: App während einer Lerneinheit beenden und neu öffnen → die Sitzung wird fortgesetzt, Antworten und Minuten sind erhalten, der Sperrstatus wird abgeglichen.
 8. **Kalender**: Lernplan → ⋯ → „Alle in Apple Kalender übernehmen“; erneut abgleichen erzeugt keine Duplikate; einen Termin in der Kalender-App verschieben → beim nächsten Abgleich wird die Zeit übernommen.
 
 ## Tests
 
 ```bash
-# Kernlogik (Linux oder macOS) – 107 Tests
+# Kernlogik (Linux oder macOS) – 108 Tests
 swift test --package-path Packages/LernKern
 # oder ohne lokales Swift:
 docker run --rm -v "$PWD/Packages/LernKern":/pkg -w /pkg swift:6.2-noble swift test

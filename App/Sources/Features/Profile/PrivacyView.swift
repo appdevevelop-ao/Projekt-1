@@ -24,7 +24,7 @@ struct PrivacyView: View {
             Section {
                 Button("Alle Daten löschen", role: .destructive) { confirmDelete = true }
             } footer: {
-                Text("Löscht Prüfungen, Unterlagen, Fortschritt, Kalendertermine von LernFokus, Zugangscodes und Sperreinstellungen. Dies kann nicht rückgängig gemacht werden.")
+                Text("Löscht Prüfungen, Unterlagen, Fortschritt, Kalendertermine von LernFokus, Zugangscodes, App-Auswahl und Sperreinstellungen und hebt eine aktive Sperre auf. Dies kann nicht rückgängig gemacht werden. Die Bildschirmzeit-Berechtigung selbst entziehst du in den iOS-Einstellungen unter Bildschirmzeit.")
             }
         }
         .navigationTitle("Datenschutz")
@@ -38,7 +38,7 @@ struct HelpView: View {
     var body: some View {
         List {
             Section("Was bedeutet 100 %?") {
-                Text("Jedes Lernziel deiner aktiven Prüfungen ist stabil beherrscht: richtig ohne Hilfe, mit verschiedenen Fragen, nach zeitlichem Abstand wiederholt, auch bei einer schwierigeren Aufgabe – und das Wissen ist aktuell präsent. Dann sind deine gesperrten Apps bis Mitternacht frei.")
+                Text("Jedes Lernziel deiner aktiven Prüfungen ist stabil beherrscht: richtig ohne Hilfe, mit verschiedenen Fragen, nach zeitlichem Abstand wiederholt, auch bei einer schwierigeren Aufgabe – und das Wissen ist aktuell präsent. Sobald eine bestandene Überprüfung das an einem Tag bestätigt, sind deine gesperrten Apps bis Mitternacht frei. Am nächsten Tag gelten wieder die normalen Regeln.")
             }
             Section("Wie verdiene ich Bildschirmzeit?") {
                 Text("Mit abgeschlossenen Wissensüberprüfungen am Ende jeder Lerneinheit (5–10 Min.), Prüfungssimulationen (10–25 Min.) und Boni für echten Fortschritt. Öffnen der App oder Durchklicken zählt nicht. Die Minuten löst du unter „Heute“ ein.")

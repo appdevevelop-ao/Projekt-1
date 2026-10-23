@@ -8,6 +8,7 @@ struct ScreenTimeSettingsView: View {
     @State private var showPicker = false
     @State private var selection = FamilyActivitySelection()
     @State private var editingWindows = false
+    @State private var confirmDisable = false
 
     var body: some View {
         let screenTime = model.screenTime
@@ -71,7 +72,14 @@ struct ScreenTimeSettingsView: View {
             Section {
                 Toggle("App-Sperre aktiv", isOn: Binding(
                     get: { screenTime.policy.isEnabled },
-                    set: { enabled in screenTime.updatePolicy { $0.isEnabled = enabled } }
+                    set: { enabled in
+                        // Während einer aktiven Sperre bewusst nachfragen (Selbstverpflichtung, kein Verbot).
+                        if !enabled && screenTime.decision?.shouldShield == true {
+                            confirmDisable = true
+                        } else {
+                            screenTime.updatePolicy { $0.isEnabled = enabled }
+                        }
+                    }
                 ))
                 .disabled(!screenTime.isAuthorized || screenTime.selection.isEmptySelection)
             } footer: {
@@ -108,6 +116,12 @@ struct ScreenTimeSettingsView: View {
             if !isShown { screenTime.updateSelection(selection) }
         }
         .sheet(isPresented: $editingWindows) { StudyWindowsEditor() }
+        .confirmationDialog("Sperre jetzt ausschalten?", isPresented: $confirmDisable, titleVisibility: .visible) {
+            Button("Ausschalten", role: .destructive) { screenTime.updatePolicy { $0.isEnabled = false } }
+            Button("Sperre behalten", role: .cancel) {}
+        } message: {
+            Text("Gerade läuft deine Lernzeit. Für kurze dringende Fälle gibt es die Notfall-Pause unter „Heute“.")
+        }
         .onAppear { screenTime.reconcile() }
     }
 

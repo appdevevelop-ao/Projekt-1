@@ -9,10 +9,7 @@ struct ProfileView: View {
         NavigationStack {
             List {
                 Section {
-                    TextField("Wie dürfen wir dich nennen? (optional)", text: Binding(
-                        get: { model.state.settings.displayName },
-                        set: { value in model.updateSettings { $0.displayName = value } }
-                    ))
+                    DisplayNameField()
                 }
                 Section("Lernen") {
                     NavigationLink { StudyTimesView() } label: { Label("Lernzeiten", systemImage: "clock") }
@@ -41,7 +38,13 @@ struct ProfileView: View {
                         get: { model.state.settings.notificationLevel },
                         set: { level in
                             model.updateSettings { $0.notificationLevel = level }
-                            if level != .off { Task { _ = await model.notifications.requestAuthorization() } }
+                            if level != .off {
+                                Task {
+                                    if await model.notifications.requestAuthorization() {
+                                        await model.notifications.reschedule(state: model.state, level: level)
+                                    }
+                                }
+                            }
                         }
                     )) {
                         ForEach(NotificationLevel.allCases, id: \.self) { Text($0.title).tag($0) }
@@ -66,6 +69,30 @@ struct ProfileView: View {
             }
             .navigationTitle("Profil")
         }
+    }
+}
+
+/// Name für die Begrüßung – gespeichert beim Bestätigen bzw. Verlassen, nicht bei jedem Tastendruck.
+struct DisplayNameField: View {
+    @Environment(AppModel.self) private var model
+    @State private var name = ""
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        TextField("Wie dürfen wir dich nennen? (optional)", text: $name)
+            .textContentType(.givenName)
+            .submitLabel(.done)
+            .focused($focused)
+            .onAppear { name = model.state.settings.displayName }
+            .onSubmit(save)
+            .onChange(of: focused) { _, isFocused in if !isFocused { save() } }
+            .onDisappear(perform: save)
+    }
+
+    private func save() {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed != model.state.settings.displayName else { return }
+        model.updateSettings { $0.displayName = trimmed }
     }
 }
 

@@ -141,6 +141,32 @@ final class CoachTests: XCTestCase {
         XCTAssertEqual(decision.status, .fullDayUnlock(DayKey(check, calendar: f.calendar)))
     }
 
+    /// Die Tagesfreigabe gilt nur für den Tag, an dem 100 % durch eine bestandene Überprüfung bestätigt wurden.
+    func testFullDayUnlockRequiresConfirmationOnThatDay() {
+        var f = Fixture()
+        for o in f.objectives { f.master(o, startingAt: f.now) }
+        let coach = LearningCoach(calendar: f.calendar)
+        let day2 = f.now.addingTimeInterval(27 * 3600)
+        XCTAssertTrue(coach.snapshot(state: f.state, now: day2).fullMastery.isComplete)
+        XCTAssertFalse(coach.snapshot(state: f.state, now: day2).fullDayUnlockEarned, "Ohne abgeschlossene Überprüfung heute keine Freigabe")
+
+        let check = CompletedCheck(examID: f.exam.id, taskID: nil, completedAt: day2, attemptIDs: [], accuracy: 1, passed: true, rewardMinutes: 5, dailyGoalCredit: 1)
+        f.state.checks.append(check)
+        XCTAssertTrue(coach.snapshot(state: f.state, now: day2.addingTimeInterval(60)).fullDayUnlockEarned)
+
+        // Folgetag: normale Logik, auch wenn der Wissensstand noch bei 100 % liegt
+        let day3 = f.calendar.date(byAdding: .day, value: 1, to: day2)!
+        XCTAssertFalse(coach.snapshot(state: f.state, now: day3).fullDayUnlockEarned)
+
+        // Nicht bestandene Überprüfung bestätigt nichts
+        var failed = check
+        failed.id = UUID()
+        failed.passed = false
+        failed.completedAt = day3
+        f.state.checks.append(failed)
+        XCTAssertFalse(coach.snapshot(state: f.state, now: day3.addingTimeInterval(60)).fullDayUnlockEarned)
+    }
+
     /// Szenario 7 + 9: neuer Tag / Neustart – Daten bleiben erhalten, neues Tagesziel.
     func testPersistenceRoundTripAndNewDay() throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent("lernkern-\(UUID().uuidString)")

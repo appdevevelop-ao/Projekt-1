@@ -32,7 +32,10 @@ Sperrbedarf laut Modus → eingelöste Belohnung (nicht im strengen Modus währe
 
 ## Vollständige Tagesfreigabe bei 100 %
 1. Nach jeder Überprüfung prüft `FullMasteryEvaluator` die Kriterien.
-2. Bei Erfüllung: `UnlockActions.grantFullMasteryUnlock` speichert den **lokalen Kalendertag** (`DayKey`).
+2. Bei Erfüllung **und** einer an diesem Tag bestandenen Überprüfung bzw. Simulation (`unlockEarnedToday`) speichert
+   `UnlockActions.grantFullMasteryUnlock` den **lokalen Kalendertag** (`DayKey`). Ein bloßes Öffnen der App am
+   Folgetag gibt also nichts frei – dort gilt wieder die normale Logik; eine bestandene Wiederholung bei weiterhin
+   100 % gibt diesen Tag erneut frei.
 3. `reconcile` entfernt die Sperre (`clearAllSettings`).
 4. Jeder spätere Rückruf am selben Tag (Lernfenster-Beginn, Tagesziel-Start …) sieht die Freigabe zuerst → keine erneute Sperre.
    Das Ende des Tagesintervalls (23:59) wird bewusst nicht vorgezogen ausgewertet.

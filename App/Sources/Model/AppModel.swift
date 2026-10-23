@@ -86,7 +86,7 @@ final class AppModel {
         snapshot = coach.snapshot(state: state, now: now)
         screenTime.syncAchievements(
             dailyGoalReached: snapshot.dailyGoal?.isReached == true,
-            fullMastery: snapshot.fullMastery.isComplete,
+            fullMastery: snapshot.fullDayUnlockEarned,
             display: shieldDisplay(),
             now: now
         )
@@ -132,6 +132,17 @@ final class AppModel {
         persistSession()
         persist()
         scheduleBackgroundRefresh()
+    }
+
+    /// Läuft bei geöffneter App regelmäßig: übernimmt Tageswechsel und Sperrgrenzen (Ende einer Belohnung,
+    /// Beginn der Lernzeit, Mitternacht) sofort, statt erst beim nächsten Öffnen.
+    func tick(now: Date = Date()) {
+        let today = DayKey(now, calendar: calendar).description
+        if state.settings.onboardingCompleted, let last = lastRoutineDayKey, last != today {
+            onForeground(now: now)
+        } else if let next = screenTime.decision?.nextReevaluation, next <= now {
+            refresh(now: now)
+        }
     }
 
     /// Hintergrundaktualisierung: Sperrzustand abgleichen (falls ein Rückruf des Systems ausblieb).
@@ -273,13 +284,13 @@ final class AppModel {
         _ = calendarService.removeAllManagedEvents(links: state.calendarLinks)
         try? store.deleteEverything()
         Keychain.set(nil, for: AIService.tokenKey)
-        screenTime.updatePolicy { $0 = ShieldPolicy() }
-        screenTime.updateSelection(.init())
+        screenTime.resetAll()
         session = nil
         chunkCache = [:]
         state = AppState()
         lastRoutineDayKey = nil
         persist()
         refresh()
+        Task { await notifications.reschedule(state: state, level: state.settings.notificationLevel) }
     }
 }

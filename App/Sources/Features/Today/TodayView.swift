@@ -86,8 +86,22 @@ struct TodayView: View {
     private var masteryCard: some View {
         Card {
             CardTitle(title: "100 % erreicht", symbol: "checkmark.seal.fill")
-            Text("Alle Lernziele sind stabil beherrscht und aktuell präsent. Deine gesperrten Apps sind für den Rest des Tages frei. Genieß es!")
-                .foregroundStyle(.secondary)
+            if model.snapshot.fullDayUnlockEarned {
+                Text("Alle Lernziele sind stabil beherrscht und aktuell präsent. Deine gesperrten Apps sind für den Rest des Tages frei. Genieß es!")
+                    .foregroundStyle(.secondary)
+            } else {
+                Text("Du stehst bei 100 %. Bestätige es heute mit einer kurzen Wiederholung – danach sind deine gesperrten Apps bis Mitternacht frei.")
+                    .foregroundStyle(.secondary)
+                if let exam = model.snapshot.exams.first {
+                    Button {
+                        Task { await model.startPractice(examID: exam.exam.id, objectiveIDs: [], kind: .review) }
+                    } label: {
+                        if model.isGeneratingQuestions { ProgressView().tint(.white) } else { Text("Kurze Wiederholung starten") }
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .disabled(model.isGeneratingQuestions)
+                }
+            }
             if let next = model.snapshot.exams.min(by: { $0.daysUntilExam < $1.daysUntilExam }) {
                 Text("Wenn du magst, kannst du freiwillig den nächsten Prüfungstag vorbereiten (\(next.exam.title)).").font(.footnote).foregroundStyle(.secondary)
             }

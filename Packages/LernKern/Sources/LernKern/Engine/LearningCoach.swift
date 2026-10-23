@@ -38,6 +38,8 @@ public struct CoachSnapshot: Sendable {
     public var nextTask: StudyTask?
     public var dailyGoal: DailyGoalStatus?
     public var fullMastery: FullMasteryStatus
+    /// 100 % erreicht UND heute durch eine bestandene Überprüfung bestätigt → Apps bis Mitternacht frei.
+    public var fullDayUnlockEarned: Bool
     public var rewardBalance: Int
     public var earnedToday: Int
     public var schedule: ScheduleStatus
@@ -104,6 +106,7 @@ public struct LearningCoach: Sendable {
         let todayTasks = state.tasks.filter { DayKey($0.start, calendar: calendar) == today }.sorted { $0.start < $1.start }
         let next = todayTasks.first { $0.isOpen && $0.end > now } ?? state.tasks.filter { $0.isOpen && $0.start > now }.min { $0.start < $1.start }
         let goal = state.dailyGoal(for: today).map { DailyGoalPlanner.status(record: $0, checks: state.checks, simulations: state.simulations, calendar: calendar) }
+        let fullMastery = FullMasteryEvaluator.evaluate(state: state, now: now, calendar: calendar)
         return CoachSnapshot(
             now: now,
             exams: exams,
@@ -111,7 +114,8 @@ public struct LearningCoach: Sendable {
             todayTasks: todayTasks,
             nextTask: next,
             dailyGoal: goal,
-            fullMastery: FullMasteryEvaluator.evaluate(state: state, now: now, calendar: calendar),
+            fullMastery: fullMastery,
+            fullDayUnlockEarned: FullMasteryEvaluator.unlockEarnedToday(fullMastery, state: state, now: now, calendar: calendar),
             rewardBalance: state.rewardBalance,
             earnedToday: state.earnedMinutes(on: today, calendar: calendar),
             schedule: scheduleStatus(state: state, now: now),

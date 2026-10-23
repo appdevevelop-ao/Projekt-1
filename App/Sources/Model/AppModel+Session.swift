@@ -254,7 +254,7 @@ extension AppModel {
             if before != after, let title = titles[id] { summary.levelChanges.append(LevelChange(title: title, from: before, to: after)) }
         }
         summary.dailyGoal = snapshot.dailyGoal
-        summary.unlockedForDay = snapshot.fullMastery.isComplete
+        summary.unlockedForDay = snapshot.fullDayUnlockEarned
         s.phase = .summary
         s.completedCheckID = s.id
         session = s
