@@ -34,6 +34,8 @@ public struct StudySessionState: Codable, Hashable, Sendable, Identifiable {
     public var timeLimitMinutes: Int?
     public var breakUntil: Date?
     public var completedCheckID: UUID?
+    /// Aktuelle Frage beantwortet, Rückmeldung wird gerade angezeigt.
+    public var currentAnswered: Bool?
 
     public init(id: UUID = UUID(), examID: UUID, taskID: UUID?, kind: StudyTaskKind, mode: Mode, objectiveIDs: [UUID],
                 phase: Phase, questionIDs: [UUID], startedAt: Date, timeLimitMinutes: Int? = nil) {
@@ -80,8 +82,14 @@ public struct StudySessionState: Codable, Hashable, Sendable, Identifiable {
         mode == .practice && activeSeconds(at: now) >= Double(max(sessionMinutes, 20) * 60) && breakUntil == nil
     }
 
-    public mutating func recordAnswer(attemptID: UUID) {
+    /// Speichert die Antwort. Ohne `advance` bleibt die Frage für die Rückmeldung stehen.
+    public mutating func recordAnswer(attemptID: UUID, advance: Bool = true) {
         attemptIDs.append(attemptID)
+        if advance { self.advance() } else { currentAnswered = true }
+    }
+
+    public mutating func advance() {
         currentIndex += 1
+        currentAnswered = nil
     }
 }

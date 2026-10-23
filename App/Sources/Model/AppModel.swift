@@ -44,14 +44,14 @@ final class AppModel {
         screenTime = ScreenTimeService()
         calendarService = CalendarService()
         var loaded = AppState()
-        var error: String?
+        var problem: String?
         do {
             loaded = try store.loadState() ?? AppState()
         } catch {
-            error = "Deine gespeicherten Daten konnten nicht gelesen werden. Sie wurden nicht gelöscht. Bitte wende dich an den Support oder setze die App unter Profil zurück."
+            problem = "Deine gespeicherten Daten konnten nicht gelesen werden. Sie wurden nicht gelöscht. Bitte wende dich an den Support oder setze die App unter Profil zurück."
         }
         state = loaded
-        loadError = error
+        loadError = problem
         snapshot = LearningCoach(calendar: .current).snapshot(state: loaded, now: Date())
         session = store.loadSession()
     }

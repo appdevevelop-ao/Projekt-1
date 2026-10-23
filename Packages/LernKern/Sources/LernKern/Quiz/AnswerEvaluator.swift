@@ -16,6 +16,16 @@ public struct AnswerEvaluation: Hashable, Sendable {
     public var tags: [String]
     public var chosenDistractor: String?
     public var grading: GradingMethod
+
+    public init(score: Double, verdict: Verdict, feedback: String, correctAnswer: String, tags: [String], chosenDistractor: String?, grading: GradingMethod) {
+        self.score = score
+        self.verdict = verdict
+        self.feedback = feedback
+        self.correctAnswer = correctAnswer
+        self.tags = tags
+        self.chosenDistractor = chosenDistractor
+        self.grading = grading
+    }
 }
 
 /// Automatische Bewertung aller nicht-offenen Aufgabenformate.

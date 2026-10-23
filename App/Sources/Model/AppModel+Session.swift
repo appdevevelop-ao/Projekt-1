@@ -1,13 +1,20 @@
 import Foundation
 import LernKern
 
+struct LevelChange: Identifiable {
+    var id: String { title }
+    var title: String
+    var from: MasteryLevel
+    var to: MasteryLevel
+}
+
 struct SessionSummary {
     var correct: Int
     var total: Int
     var grant: RewardGrant?
     var check: CompletedCheck?
     var simulation: ExamSimulationResult?
-    var levelChanges: [(title: String, from: MasteryLevel, to: MasteryLevel)]
+    var levelChanges: [LevelChange]
     var dailyGoal: DailyGoalStatus?
     var unlockedForDay: Bool
 }
@@ -186,20 +193,21 @@ extension AppModel {
     }
 
     /// Speichert die bewertete Antwort sofort (kein Datenverlust bei Abbruch).
-    func record(_ question: Question, response: AttemptResponse, evaluation: AnswerEvaluation, usedHint: Bool, seconds: Double) {
-        guard var s = session else { return }
+    func record(_ question: Question, response: AttemptResponse, evaluation: AnswerEvaluation, usedHint: Bool, seconds: Double, advance: Bool) {
+        guard var s = session, s.currentAnswered != true else { return }
         let context: AttemptContext = s.mode == .simulation ? .simulation : (s.kind == .review ? .review : .check)
         let attempt = coach.makeAttempt(question: question, response: response, evaluation: evaluation, sessionID: s.id, durationSeconds: seconds,
                                         context: context, usedHint: usedHint, state: state, now: Date())
-        s.recordAnswer(attemptID: attempt.id)
+        s.recordAnswer(attemptID: attempt.id, advance: advance)
         session = s
         persistSession()
         mutate { $0.attempts.append(attempt) }
     }
 
-    func skipCurrentQuestion() {
+    /// Zur nächsten Frage (nach der Rückmeldung).
+    func advanceQuestion() {
         guard var s = session else { return }
-        s.currentIndex += 1
+        s.advance()
         session = s
         persistSession()
     }
@@ -207,7 +215,7 @@ extension AppModel {
     func reportCurrentQuestion(_ questionID: UUID) {
         mutate { coach.reportQuestion(&$0, questionID: questionID) }
         if var s = session, s.currentQuestionID == questionID {
-            s.currentIndex += 1
+            s.advance()
             session = s
             persistSession()
         }
@@ -243,7 +251,7 @@ extension AppModel {
         for id in touched {
             let before = levelsAtStart[id] ?? .notStarted
             let after = snapshot.knowledge[id]?.level ?? .notStarted
-            if before != after, let title = titles[id] { summary.levelChanges.append((title, before, after)) }
+            if before != after, let title = titles[id] { summary.levelChanges.append(LevelChange(title: title, from: before, to: after)) }
         }
         summary.dailyGoal = snapshot.dailyGoal
         summary.unlockedForDay = snapshot.fullMastery.isComplete

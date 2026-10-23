@@ -4,6 +4,11 @@ import Foundation
 public struct AIRejection: Hashable, Sendable {
     public var item: String
     public var reason: String
+
+    public init(item: String, reason: String) {
+        self.item = item
+        self.reason = reason
+    }
 }
 
 /// Validiert strukturierte KI-Ausgaben, bevor sie in die App gelangen.
@@ -21,6 +26,14 @@ public enum AIResponseValidator {
         public var terms: [KeyTerm]
         public var rejections: [AIRejection]
         public var warnings: [String]
+
+        public init(topics: [Topic], objectives: [LearningObjective], terms: [KeyTerm], rejections: [AIRejection], warnings: [String]) {
+            self.topics = topics
+            self.objectives = objectives
+            self.terms = terms
+            self.rejections = rejections
+            self.warnings = warnings
+        }
     }
 
     public static func curriculum(_ response: AIContracts.AnalyzeResponse, examID: UUID, chunks: [SourceChunk], existingTopics: [Topic], orderOffset: Int) -> CurriculumResult {
