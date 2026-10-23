@@ -151,7 +151,7 @@ docker run --rm -v "$PWD/Packages/LernKern":/pkg -w /pkg swift:6.2-noble swift t
 # KI-Server – echter SDK-Client mit simuliertem Netzwerk, keine Kosten
 npm ci --prefix Backend && npm test --prefix Backend
 
-# iOS-App im Simulator
+# iOS-App im Simulator (baut App + 3 Erweiterungen, führt App-Tests aus)
 xcodegen generate
 xcodebuild test -project LernFokus.xcodeproj -scheme LernFokus -destination 'platform=iOS Simulator,name=iPhone 16' CODE_SIGNING_ALLOWED=NO
 ```
@@ -164,6 +164,10 @@ Sommerzeit, verfrühte Systemrückrufe, Lernplan (verpasste Einheiten, angehefte
 zu wenig Zeit), Kalender-Synchronisierung (Duplikate, Verschiebungen, Konflikte, Löschungen), ICS,
 DOCX/PPTX-Extraktion, Begriffserkennung, Duplikate, KI-Validierung (Halluzinationen), Persistenz und Wiederherstellung,
 Ende-zu-Ende-Abläufe des Lerncoachs.
+
+Die App-Tests (`App/Tests`) prüfen das App-Modell mit echtem Dateispeicher: Textimport → belegte Lernziele und Fragen →
+Lernplan, Fortsetzen einer Sitzung nach Neustart, einmalige Gutschrift einer Überprüfung, kein Abbuchen ohne
+eingerichtete Sperre, Löschen eines Dokuments inkl. gespeicherter Abschnitte, Schutz beschädigter Daten.
 
 ## Bekannte Einschränkungen
 
