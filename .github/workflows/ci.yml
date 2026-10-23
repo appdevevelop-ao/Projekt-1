@@ -35,6 +35,7 @@ jobs:
   ios:
     name: iOS-App (Build + Tests im Simulator)
     runs-on: macos-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
       - name: Neueste stabile Xcode-Version wählen
@@ -60,9 +61,14 @@ jobs:
             -scheme LernFokus \
             -destination "id=$DEVICE_ID" \
             CODE_SIGNING_ALLOWED=NO \
+            -test-timeouts-enabled YES \
+            -default-test-execution-time-allowance 120 \
+            -maximum-test-execution-time-allowance 300 \
             | tee xcodebuild.log | grep -E "error:|warning: .*deprecated|Test Suite|Executed|BUILD|\*\*" || true
           tail -5 xcodebuild.log
           grep -q "\*\* TEST SUCCEEDED \*\*" xcodebuild.log
       - name: Fehler-Log
         if: failure()
-        run: grep -E "error:" -A3 xcodebuild.log | head -200 || true
+        run: |
+          grep -E "error:|Test Case .* failed|XCTAssert|Restarting after unexpected exit|crashed" -A3 xcodebuild.log | head -200 || true
+          tail -60 xcodebuild.log || true
