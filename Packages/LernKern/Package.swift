@@ -19,6 +19,6 @@ let package = Package(
     targets: [
         .target(name: "ShieldLogic"),
         .target(name: "LernKern", dependencies: ["ShieldLogic"]),
-        .testTarget(name: "LernKernTests", dependencies: ["LernKern", "ShieldLogic"]),
+        .testTarget(name: "LernKernTests", dependencies: ["LernKern", "ShieldLogic"], resources: [.copy("Resources")]),
     ]
 )
