@@ -19,7 +19,8 @@ concurrency:
 jobs:
   screenshots:
     name: Bildschirmfotos (iPhone und iPad)
-    runs-on: macos-latest
+    # Fester Mac-Typ statt macos-latest (dort gab es Wartezeiten ohne Zuteilung)
+    runs-on: macos-15
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
