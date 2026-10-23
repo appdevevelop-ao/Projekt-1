@@ -1,0 +1,16 @@
+{
+  "name": "lernfokus-ai-backend",
+  "version": "0.1.0",
+  "description": "KI-Server für LernFokus: hält den API-Schlüssel serverseitig und liefert validierte, strukturierte Lerninhalte.",
+  "private": true,
+  "type": "module",
+  "main": "src/server.js",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.1.0"
+  }
+}
