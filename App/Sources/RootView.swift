@@ -3,9 +3,24 @@ import SwiftUI
 
 struct RootView: View {
     @Environment(AppModel.self) private var model
-    @State private var tab: Tab = .today
+    @State private var tab: Tab = RootView.initialTab
 
     enum Tab: Hashable { case today, plan, material, progress, profile }
+
+    static var initialTab: Tab {
+        #if DEBUG
+        if DemoMode.isActive {
+            switch DemoMode.screen {
+            case "plan": return .plan
+            case "material", "exam": return .material
+            case "progress": return .progress
+            case "profile": return .profile
+            default: return .today
+            }
+        }
+        #endif
+        return .today
+    }
 
     var body: some View {
         Group {

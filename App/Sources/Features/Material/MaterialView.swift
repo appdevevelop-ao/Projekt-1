@@ -6,9 +6,17 @@ import UniformTypeIdentifiers
 struct MaterialView: View {
     @Environment(AppModel.self) private var model
     @State private var creatingExam = false
+    @State private var path: [UUID] = MaterialView.initialPath
+
+    private static var initialPath: [UUID] {
+        #if DEBUG
+        if DemoMode.isActive, DemoMode.screen == "exam", let id = DemoMode.examID { return [id] }
+        #endif
+        return []
+    }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             List {
                 if model.state.exams.isEmpty {
                     ContentUnavailableView {

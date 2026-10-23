@@ -1,0 +1,112 @@
+name: Bildschirmfotos
+
+# Echte Bildschirmfotos aus dem iOS-Simulator (Debug-Build mit Beispieldaten, siehe App/Sources/Demo).
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/ai-learning-app-screentime-m9kv6j]
+    paths:
+      - "App/**"
+      - "Shared/**"
+      - "Packages/**"
+      - "project.yml"
+      - ".github/workflows/screenshots.yml"
+
+concurrency:
+  group: screenshots-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  screenshots:
+    name: Bildschirmfotos (iPhone und iPad)
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - name: Neueste stabile Xcode-Version wählen
+        run: |
+          XC=$(ls -d /Applications/Xcode_*.app | grep -viE 'beta|release_candidate|_rc' | sort -V | tail -1)
+          sudo xcode-select -s "$XC"
+          xcodebuild -version
+      - name: Projekt erzeugen
+        run: |
+          brew install xcodegen
+          xcodegen generate
+      - name: Simulatoren wählen
+        run: |
+          xcrun simctl list devices available -j > devices.json
+          python3 - <<'PY' >> "$GITHUB_ENV"
+          import json, re
+          devices = json.load(open("devices.json"))["devices"]
+          def version(runtime):
+              m = re.search(r"iOS-(\d+)-(\d+)", runtime)
+              return tuple(int(x) for x in m.groups()) if m else (0, 0)
+          runtimes = sorted((k for k in devices if "iOS" in k), key=version)
+          latest = devices[runtimes[-1]]
+          phones = [d for d in latest if d["name"].startswith("iPhone")]
+          pads = [d for d in latest if d["name"].startswith("iPad")]
+          phone = next((d for d in phones if "Pro" in d["name"] and "Max" not in d["name"]), phones[-1])
+          pad = next((d for d in pads if "Pro" in d["name"] and "11" in d["name"]), pads[0] if pads else None)
+          print(f"IPHONE={phone['udid']}")
+          print(f"IPHONE_NAME={phone['name']}")
+          if pad:
+              print(f"IPAD={pad['udid']}")
+              print(f"IPAD_NAME={pad['name']}")
+          PY
+          cat "$GITHUB_ENV"
+      - name: App bauen (Debug, Simulator)
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project LernFokus.xcodeproj \
+            -scheme LernFokus \
+            -destination "id=$IPHONE" \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            | tee build.log | grep -E "error:|BUILD" || true
+          grep -q "BUILD SUCCEEDED" build.log
+      - name: Bildschirmfotos aufnehmen
+        run: |
+          APP=build/Build/Products/Debug-iphonesimulator/LernFokus.app
+          BUNDLE=$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$APP/Info.plist")
+          mkdir -p screenshots
+
+          prepare() {
+            xcrun simctl boot "$1" || true
+            xcrun simctl bootstatus "$1" -b
+            xcrun simctl status_bar "$1" override --time "9:41" --dataNetwork wifi --wifiMode active --wifiBars 3 \
+              --cellularMode active --cellularBars 4 --batteryState charged --batteryLevel 100 || true
+            xcrun simctl ui "$1" appearance light
+            xcrun simctl install "$1" "$APP"
+          }
+          shot() { # Gerät, Bildschirm, Dateiname, Wartezeit
+            xcrun simctl launch --terminate-running-process "$1" "$BUNDLE" -LFDemo YES -LFScreen "$2"
+            sleep "${4:-8}"
+            xcrun simctl io "$1" screenshot "screenshots/$3.png"
+          }
+
+          prepare "$IPHONE"
+          shot "$IPHONE" today 01-heute 12
+          shot "$IPHONE" plan 02-lernplan
+          shot "$IPHONE" exam 03-lernstoff
+          shot "$IPHONE" progress 04-fortschritt
+          shot "$IPHONE" session 05-lernsitzung 12
+          shot "$IPHONE" profile 06-profil
+          shot "$IPHONE" onboarding 07-onboarding
+          xcrun simctl ui "$IPHONE" appearance dark
+          shot "$IPHONE" today 08-heute-dunkel
+          shot "$IPHONE" progress 09-fortschritt-dunkel
+
+          if [ -n "$IPAD" ]; then
+            prepare "$IPAD"
+            shot "$IPAD" today 10-ipad-heute 12
+            shot "$IPAD" plan 11-ipad-lernplan
+          fi
+
+          for f in screenshots/*.png; do sips -Z 1400 "$f" >/dev/null; done
+          ls -la screenshots
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bildschirmfotos
+          path: screenshots/
+          retention-days: 14

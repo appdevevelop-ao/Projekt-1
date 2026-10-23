@@ -4,7 +4,7 @@ import SwiftUI
 
 @main
 struct LernFokusApp: App {
-    @State private var model = AppModel()
+    @State private var model = AppModel.forLaunch()
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
@@ -23,6 +23,16 @@ struct LernFokusApp: App {
         .backgroundTask(.appRefresh(BackgroundRefresh.identifier)) {
             await MainActor.run { model.backgroundRefresh() }
         }
+    }
+}
+
+extension AppModel {
+    /// Normaler Start; in Debug-Builds mit `-LFDemo YES` stattdessen Beispieldaten in einem eigenen Verzeichnis.
+    static func forLaunch() -> AppModel {
+        #if DEBUG
+        if DemoMode.isActive { return makeDemo() }
+        #endif
+        return AppModel()
     }
 }
 
