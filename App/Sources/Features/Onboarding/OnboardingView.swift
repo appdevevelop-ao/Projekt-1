@@ -99,6 +99,15 @@ struct OnboardingView: View {
                     }
                     .buttonStyle(.plain)
                 }
+                #if DEBUG
+                VStack(alignment: .leading, spacing: 4) {
+                    Button("Mit Beispieldaten ausprobieren", systemImage: "wand.and.stars") { model.loadDemoData() }
+                        .font(.subheadline.weight(.medium))
+                    Text("Nur in der Testversion: legt eine Beispielprüfung mit Skript, Lernplan und Lernverlauf an.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                .padding(.top, 12)
+                #endif
             }
             .padding()
             .readableWidth()

@@ -7,15 +7,22 @@ extension AppModel {
     static func makeDemo(now: Date = Date()) -> AppModel {
         try? FileManager.default.removeItem(at: DemoMode.directory)
         let model = AppModel(storeDirectory: DemoMode.directory)
-        model.seedDemo(now: now)
+        // Keine Routine-Neuplanung mit Hinweis beim Start der Vorführung
+        UserDefaults.standard.set(DayKey(now, calendar: model.calendar).description, forKey: "lf.lastRoutineDay")
+        if DemoMode.screen != "onboarding" { model.seedDemo(now: now) }
         return model
+    }
+
+    /// Testversion: Beispielprüfung mit Lernverlauf direkt aus dem Onboarding anlegen (ersetzt den bisherigen Stand).
+    func loadDemoData(now: Date = Date()) {
+        UserDefaults.standard.set(DayKey(now, calendar: calendar).description, forKey: "lf.lastRoutineDay")
+        seedDemo(now: now)
+        banner = Banner(kind: .info, title: "Beispieldaten geladen",
+                        message: "Eine Biologie-Prüfung mit Skript und Lernverlauf. Unter Profil → Datenschutz kannst du alles wieder löschen.")
     }
 
     private func seedDemo(now: Date) {
         let cal = calendar
-        // Keine Routine-Neuplanung mit Hinweis beim Start der Vorführung
-        UserDefaults.standard.set(DayKey(now, calendar: cal).description, forKey: "lf.lastRoutineDay")
-        guard DemoMode.screen != "onboarding" else { return }
 
         let examDay = cal.date(byAdding: .day, value: 12, to: now) ?? now
         let exam = Exam(title: "Biologie – Zellbiologie", examDate: cal.date(bySettingHour: 9, minute: 0, second: 0, of: examDay) ?? examDay,

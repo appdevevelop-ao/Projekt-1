@@ -14,6 +14,7 @@ gesperrten Apps bis Mitternacht frei**.
 - [Installation und Start](#installation-und-start)
 - [KI-Server einrichten](#ki-server-einrichten)
 - [Berechtigungen und Entitlements](#berechtigungen-und-entitlements)
+- [Ohne Mac ausprobieren](#ohne-mac-ausprobieren-im-browser-auch-auf-dem-iphone)
 - [Auf dem iPhone testen](#auf-dem-iphone-testen)
 - [Tests](#tests)
 - [Bekannte Einschränkungen](#bekannte-einschränkungen)
@@ -128,6 +129,19 @@ Entitlements (in `project.yml` hinterlegt, in Xcode unter *Signing & Capabilitie
 Für **TestFlight/App Store** muss das *Family Controls (Distribution)*-Entitlement bei Apple beantragt werden
 (developer.apple.com → Family Controls). Für die Entwicklung auf eigenen Geräten genügt die Development-Variante,
 die Xcode beim Hinzufügen der Capability automatisch verwendet.
+
+## Ohne Mac ausprobieren (im Browser, auch auf dem iPhone)
+
+Der Workflow „Testversion im Browser“ (`.github/workflows/browser-preview.yml`) baut die App für den iOS-Simulator
+und lädt sie zu [Appetize.io](https://appetize.io) hoch. Dort läuft sie im Browser – auch in Safari auf dem iPhone.
+1. Kostenloses Konto bei appetize.io anlegen und dort ein **API-Token** erzeugen.
+2. Im GitHub-Repository: *Settings → Secrets and variables → Actions → New repository secret*,
+   Name `APPETIZE_API_TOKEN`, Wert = Token.
+3. Unter *Actions → Testversion im Browser → Run workflow* starten. Der Link steht danach in der Zusammenfassung des Laufs.
+4. In der App auf der ersten Seite „Mit Beispieldaten ausprobieren“ antippen (nur in dieser Testversion vorhanden).
+
+Ohne Token liegt die Datei `LernFokus-Simulator.zip` als Artefakt am Lauf und kann manuell auf appetize.io hochgeladen
+werden. Im Browser-Simulator funktionieren App-Sperre, Kalender und Kamera nicht (wie im Xcode-Simulator).
 
 ## Auf dem iPhone testen
 

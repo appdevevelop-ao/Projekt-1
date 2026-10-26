@@ -1,0 +1,96 @@
+name: Testversion im Browser
+
+# Baut die App für den iOS-Simulator (Debug, mit „Mit Beispieldaten ausprobieren“) und lädt sie zu Appetize.io hoch.
+# Dann lässt sie sich auf jedem Gerät im Browser bedienen – auch auf dem iPhone ohne Mac.
+# Einmalig nötig: Repository-Secret APPETIZE_API_TOKEN (API-Token aus dem Appetize-Konto).
+# Optional: Repository-Variable APPETIZE_PUBLIC_KEY, damit Updates unter demselben Link erscheinen.
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/ai-learning-app-screentime-m9kv6j]
+    paths:
+      - "App/**"
+      - "Shared/**"
+      - "Extensions/**"
+      - "Packages/**"
+      - "project.yml"
+      - ".github/workflows/browser-preview.yml"
+
+concurrency:
+  group: browser-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    name: Simulator-Build für den Browser
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - name: Neueste stabile Xcode-Version wählen
+        run: |
+          XC=$(ls -d /Applications/Xcode_*.app | grep -viE 'beta|release_candidate|_rc' | sort -V | tail -1)
+          sudo xcode-select -s "$XC"
+          xcodebuild -version
+      - name: Projekt erzeugen
+        run: |
+          brew install xcodegen
+          xcodegen generate
+      - name: App für den Simulator bauen (arm64 und x86_64)
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project LernFokus.xcodeproj \
+            -scheme LernFokus \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination "generic/platform=iOS Simulator" \
+            -derivedDataPath build \
+            ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            | tee build.log | grep -E "error:|BUILD" || true
+          grep -q "BUILD SUCCEEDED" build.log
+          ditto -c -k --sequesterRsrc --keepParent build/Build/Products/Debug-iphonesimulator/LernFokus.app LernFokus-Simulator.zip
+          ls -la LernFokus-Simulator.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LernFokus-Simulator
+          path: LernFokus-Simulator.zip
+          retention-days: 30
+      - name: Zu Appetize.io hochladen
+        env:
+          APPETIZE_API_TOKEN: ${{ secrets.APPETIZE_API_TOKEN }}
+          APPETIZE_PUBLIC_KEY: ${{ vars.APPETIZE_PUBLIC_KEY }}
+        run: |
+          if [ -z "$APPETIZE_API_TOKEN" ]; then
+            echo "::notice::Kein Secret APPETIZE_API_TOKEN gesetzt – Upload übersprungen. Die App-Datei liegt als Artefakt bereit."
+            echo "Kein APPETIZE_API_TOKEN gesetzt – die Datei LernFokus-Simulator.zip kann manuell auf appetize.io hochgeladen werden." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if [ -n "$APPETIZE_PUBLIC_KEY" ]; then
+            ENDPOINT="https://api.appetize.io/v1/apps/$APPETIZE_PUBLIC_KEY"
+          else
+            ENDPOINT="https://api.appetize.io/v1/apps"
+          fi
+          STATUS=$(curl --http1.1 -sS -o response.json -w "%{http_code}" "$ENDPOINT" \
+            -H "X-API-KEY: $APPETIZE_API_TOKEN" \
+            -F "file=@LernFokus-Simulator.zip" \
+            -F "platform=ios" \
+            -F "note=LernFokus Testversion ${GITHUB_SHA::7}")
+          echo "HTTP-Status: $STATUS"
+          if [ "$STATUS" -lt 200 ] || [ "$STATUS" -ge 300 ]; then
+            # Fehlermeldung ohne Zugangsdaten ausgeben
+            python3 -c 'import json; d=json.load(open("response.json")); print({k: d[k] for k in ("message", "error", "errors") if k in d})' || head -c 500 response.json
+            exit 1
+          fi
+          KEY=$(python3 -c 'import json; print(json.load(open("response.json"))["publicKey"])')
+          rm -f response.json
+          LINK="https://appetize.io/app/$KEY"
+          echo "Testversion im Browser: $LINK"
+          {
+            echo "### LernFokus im Browser öffnen"
+            echo ""
+            echo "$LINK"
+            echo ""
+            echo "Für Updates unter demselben Link: Repository-Variable APPETIZE_PUBLIC_KEY = $KEY"
+          } >> "$GITHUB_STEP_SUMMARY"
